@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Карточка места -->
+    <div class="card mb-4">
+        <div class="row g-0">
+            <!-- Галерея фотографий -->
+            <div class="col-md-5">
+                {% if place.photos %}
+                    <div id="placeCarousel" class="carousel slide" data-bs-ride="carousel">
+                        <div class="carousel-inner">
+                            {% for photo in place.photos %}
+                            <div class="carousel-item {% if loop.first %}active{% endif %}">
+                                <img src="{{ url_for('static', filename='uploads/' + photo.filename) }}" 
+                                     class="d-block w-100" 
+                                     style="height: 300px; object-fit: cover;" 
+                                     alt="{{ place.name }}">
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <button class="carousel-control-prev" type="button" data-bs-target="#placeCarousel" data-bs-slide="prev">
+                            <span class="carousel-control-prev-icon"></span>
+                        </button>
+                        <button class="carousel-control-next" type="button" data-bs-target="#placeCarousel" data-bs-slide="next">
+                            <span class="carousel-control-next-icon"></span>
+                        </button>
+                    </div>
+                {% else %}
+                    <img src="{{ url_for('static', filename='img/no-image.jpg') }}" 
+                         class="img-fluid" 
+                         style="height: 300px; object-fit: cover;" 
+                         alt="No image">
+                {% endif %}
+            </div>
+
+            <!-- Информация о месте -->
+            <div class="col-md-7">
+                <div class="card-body">
+                    <h2 class="card-title">{{ place.name }}</h2>
+                    <p class="text-muted">
+                        <i class="bi bi-geo-alt"></i> {{ place.address }}
+                    </p>
+                    
+                    <!-- Блок среднего рейтинга -->
+                    <div class="mb-3">
+                        <div class="d-flex align-items-center">
+                            <span class="me-2">Рейтинг:</span>
+                            <div class="rating-stars text-warning">
+                                {% set avg_rating = place.average_rating %}
+                                {% for i in range(5) %}
+                                    {% if avg_rating >= i+0.8 %}
+                                        <i class="bi bi-star-fill"></i>
+                                    {% elif avg_rating >= i+0.3 %}
+                                        <i class="bi bi-star-half"></i>
+                                    {% else %}
+                                        <i class="bi bi-star"></i>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                            <span class="ms-2">
+                                <strong>{{ "%.1f"|format(avg_rating) }}</strong>/5
+                                <small class="text-muted">({{ place.reviews|length }} отзывов)</small>
+                            </span>
+                        </div>
+                    </div>
+
+                    <p class="card-text">{{ place.description }}</p>
+                    
+                    <!-- Категория -->
+                    <div class="mt-3">
+                        <span class="badge bg-primary">{{ place.category }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Форма для отзыва -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>Оставить отзыв</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('place_detail', place_id=place.id) }}">
+                {{ form.hidden_tag() }}
+                <div class="mb-3">
+                    <label class="form-label">Ваше имя</label>
+                    {{ form.author(class="form-control") }}
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Оценка (1-5)</label>
+                    {{ form.rating(class="form-control") }}
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Комментарий</label>
+                    {{ form.comment(class="form-control", rows=3) }}
+                </div>
+                <button type="submit" class="btn btn-primary">Отправить</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Список отзывов -->
+    <div class="card">
+        <div class="card-header">
+            <h5>Отзывы посетителей</h5>
+        </div>
+        <div class="card-body">
+            {% if place.reviews %}
+                {% for review in place.reviews|sort(attribute='created_at', reverse=True) %}
+                <div class="mb-3 pb-3 border-bottom">
+                    <div class="d-flex justify-content-between">
+                        <strong>{{ review.author }}</strong>
+                        <small class="text-muted">{{ review.created_at.strftime('%d.%m.%Y %H:%M') }}</small>
+                    </div>
+                    <div class="text-warning mb-2">
+                        {% for i in range(5) %}
+                            {% if i < review.rating %}
+                                <i class="bi bi-star-fill"></i>
+                            {% else %}
+                                <i class="bi bi-star"></i>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    <p>{{ review.comment }}</p>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-muted">Пока нет отзывов. Будьте первым!</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    .rating-stars {
+        font-size: 1.25rem;
+        letter-spacing: 0.1em;
+    }
+    .bi-star-half {
+        position: relative;
+    }
+    .bi-star-half:before {
+        content: "\f586";
+        position: absolute;
+        left: 0;
+        width: 50%;
+        overflow: hidden;
+    }
+</style>
+{% endblock %}
